@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <CreateCipx>true</CreateCipx>
+    <GenerateHashSummary>false</GenerateHashSummary>
+    <RootNamespace>ClassIsland.LiquidGlass</RootNamespace>
+    <AssemblyName>ClassIsland.LiquidGlass</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ClassIslandPluginSdkVersion>2.0.0.*</ClassIslandPluginSdkVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClassIsland.PluginSdk" Version="$(ClassIslandPluginSdkVersion)">
+      <ExcludeAssets>runtime; native</ExcludeAssets>
+    </PackageReference>
+    <!-- 应用已自带该包；此处仅用于编译期引用 AvaloniaRuntimeXamlLoader 公开 API。 -->
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="11.2.0">
+      <ExcludeAssets>runtime; native</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaXaml Remove="XamlThemes\LiquidGlass\Styles.axaml" />
+    <AvaloniaResource Include="XamlThemes\LiquidGlass\Styles.axaml"
+                      Link="XamlThemes\LiquidGlass\Styles.axamlx" />
+    <AvaloniaResource Include="icon.png" />
+    <AvaloniaResource Include="Assets\noise.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="manifest.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="README.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="DisableCipxHashSummary" BeforeTargets="CreateCipx">
+    <PropertyGroup>
+      <GenerateHashSummary>false</GenerateHashSummary>
+    </PropertyGroup>
+  </Target>
+
+</Project>

@@ -1,0 +1,10 @@
+id: dev.you.liquidglass
+name: Liquid Glass
+description: 为 ClassIsland 主界面添加漂亮的液体玻璃（Liquid Glass）质感效果：分层高光、渐变玻璃、发光边框、光泽扫过动画与系统亚克力背景。
+entranceAssembly: "ClassIsland.LiquidGlass.dll"
+url: https://github.com/yourname/ClassIsland.LiquidGlass
+apiVersion: 2.0.0.0
+version: 1.0.0.0
+author: YourName
+icon: icon.png
+readme: README.md

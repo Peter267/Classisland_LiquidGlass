@@ -1,0 +1,131 @@
+<ci:SettingsPageBase x:Class="ClassIsland.LiquidGlass.Views.SettingsPages.LiquidGlassSettingsPage"
+      xmlns="https://github.com/avaloniaui"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:core="clr-namespace:ClassIsland.Core.Controls;assembly=ClassIsland.Core"
+      xmlns:fa="clr-namespace:FluentAvalonia.UI.Controls;assembly=FluentAvalonia"
+      xmlns:ci="http://classisland.tech/schemas/xaml/core"
+      mc:Ignorable="d"
+      d:DesignHeight="800" d:DesignWidth="900">
+    <ScrollViewer>
+        <StackPanel Classes="settings-container animated-intro">
+            <core:IconText Glyph="&#xEF27;" Text="液体玻璃" Margin="0 0 0 4" />
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xE713;}"
+                                 Header="启用液体玻璃"
+                                 Description="在主界面主题列表中启用或停用 Liquid Glass 主题。">
+                <fa:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding Plugin.Settings.IsEnabled}" />
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xE713;}"
+                                 Header="玻璃色调模式"
+                                 Description="选择玻璃的明暗基调，自动模式将跟随系统明暗。">
+                <fa:SettingsExpander.Footer>
+                    <ComboBox Width="180"
+                              SelectedIndex="{Binding Plugin.Settings.GlassMode}"
+                              VerticalAlignment="Center">
+                        <ComboBoxItem Content="跟随系统"/>
+                        <ComboBoxItem Content="浅色"/>
+                        <ComboBoxItem Content="深色"/>
+                    </ComboBox>
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xF37D;}"
+                                 Header="玻璃着色强度"
+                                 Description="玻璃底色与着色的强度，数值越低玻璃越通透。">
+                <fa:SettingsExpander.Footer>
+                    <Slider Width="180"
+                            Minimum="0.2" Maximum="0.9"
+                            Classes="auto-tooltip"
+                            ci:SliderDragTooltipAssist.StringFormat="F2"
+                            Value="{Binding Plugin.Settings.TintOpacity}"
+                            TickFrequency="0.05"
+                            IsSnapToTickEnabled="True"/>
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xE523;}"
+                                 Header="顶部高光强度"
+                                 Description="玻璃顶部镜面高光的亮度。">
+                <fa:SettingsExpander.Footer>
+                    <Slider Width="180"
+                            Minimum="0" Maximum="1"
+                            Classes="auto-tooltip"
+                            ci:SliderDragTooltipAssist.StringFormat="F2"
+                            Value="{Binding Plugin.Settings.HighlightOpacity}"
+                            TickFrequency="0.05"
+                            IsSnapToTickEnabled="True"/>
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xEF27;}"
+                                 Header="边框光效强度"
+                                 Description="玻璃边缘发光边框的亮度。">
+                <fa:SettingsExpander.Footer>
+                    <Slider Width="180"
+                            Minimum="0" Maximum="1"
+                            Classes="auto-tooltip"
+                            ci:SliderDragTooltipAssist.StringFormat="F2"
+                            Value="{Binding Plugin.Settings.BorderOpacity}"
+                            TickFrequency="0.05"
+                            IsSnapToTickEnabled="True"/>
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xF031;}"
+                                 Header="投影强度"
+                                 Description="岛屿在桌面上投射的阴影强度。">
+                <fa:SettingsExpander.Footer>
+                    <Slider Width="180"
+                            Minimum="0" Maximum="1"
+                            Classes="auto-tooltip"
+                            ci:SliderDragTooltipAssist.StringFormat="F2"
+                            Value="{Binding Plugin.Settings.ShadowStrength}"
+                            TickFrequency="0.05"
+                            IsSnapToTickEnabled="True"/>
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xE8D6;}"
+                                 Header="光泽扫过动画"
+                                 Description="玻璃表面周期性的斜向光泽扫过效果。">
+                <fa:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding Plugin.Settings.EnableShine}" />
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xE81C;}"
+                                 Header="玻璃噪点纹理"
+                                 Description="玻璃表面的细微噪点颗粒，增强真实玻璃质感。">
+                <fa:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding Plugin.Settings.EnableNoise}" />
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xE8BD;}"
+                                 Header="文字颜色适配"
+                                 Description="让岛屿内的文字颜色随玻璃明暗自动适配，获得最佳可读性。">
+                <fa:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding Plugin.Settings.AdaptTextColor}" />
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <fa:SettingsExpander IconSource="{core:FluentIconSource &#xE9D2;}"
+                                 Header="系统亚克力背景（实验性）"
+                                 Description="Windows 11 下启用系统级 AcrylicBlur 背景，让桌面壁纸透过玻璃真实模糊。需要较新的 GPU，性能较弱的设备请保持关闭。">
+                <fa:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding Plugin.Settings.EnableAcrylicBackdrop}" />
+                </fa:SettingsExpander.Footer>
+            </fa:SettingsExpander>
+
+            <TextBlock Text="提示：大部分外观参数（背景不透明度、圆角半径、自定义背景色）可在【外观】设置页中调整，Liquid Glass 主题会自动适配。"
+                       Classes="settings-description"
+                       Margin="12 8 12 0"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+    </ScrollViewer>
+</ci:SettingsPageBase>
