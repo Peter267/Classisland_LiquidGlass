@@ -48,13 +48,18 @@ public class Plugin : PluginBase
                 Banner = "avares://ClassIsland.LiquidGlass/icon.png"
             });
 
+        // 必须在插件 Initialize 阶段（早于 MainWindow.Show() 触发的首次
+        // LoadAllThemes）完成注册：应用未提供运行时 XAML 加载器，也无法从
+        // 默认程序集上下文解析插件的 avares 资源。若延迟到 AppStarted，
+        // 首次加载主题必然抛 XamlLoadException（加载器尚未注册）。
+        RuntimeXamlLoaderRegistrar.BridgePluginAssembly();
+        RuntimeXamlLoaderRegistrar.EnsureRegistered();
+
         AppBase.Current.AppStarted += (_, _) =>
         {
             try
             {
-                // 主题加载前必须注册：应用未提供运行时 XAML 加载器，也无法从
-                // 默认程序集上下文解析插件的 avares 资源。
-                RuntimeXamlLoaderRegistrar.BridgePluginAssembly();
+                // 幂等兜底：若应用在插件加载后重建了定位器作用域，确保注册仍生效。
                 RuntimeXamlLoaderRegistrar.EnsureRegistered();
 
                 IAppHost.GetService<LiquidGlassThemeManager>().Initialize();

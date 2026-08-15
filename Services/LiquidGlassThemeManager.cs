@@ -26,6 +26,8 @@ public class LiquidGlassThemeManager
     private const string KeyShineEnabled = "LG.ShineEnabled";
     private const string KeyNoiseEnabled = "LG.NoiseEnabled";
     private const string KeyTextBrush = "LG.TextBrush";
+    private const string KeyInnerShadowBrush = "LG.InnerShadowBrush";
+    private const string KeyReflectionBrush = "LG.ReflectionBrush";
 
     private readonly Plugin _plugin;
     private readonly IThemeService _themeService;
@@ -120,6 +122,8 @@ public class LiquidGlassThemeManager
         _resourceLoaderBorder.Resources[KeyShineBrush] = BuildShineBrush(isLight);
         _resourceLoaderBorder.Resources[KeyShineEnabled] = settings.EnableShine;
         _resourceLoaderBorder.Resources[KeyNoiseEnabled] = settings.EnableNoise;
+        _resourceLoaderBorder.Resources[KeyInnerShadowBrush] = BuildInnerShadowBrush(isLight);
+        _resourceLoaderBorder.Resources[KeyReflectionBrush] = BuildReflectionBrush(isLight);
         if (settings.AdaptTextColor)
         {
             _resourceLoaderBorder.Resources[KeyTextBrush] =
@@ -177,43 +181,87 @@ public class LiquidGlassThemeManager
             EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
             GradientStops =
             {
-                new GradientStop(Color.FromArgb((byte)(255 * topAlpha * opacity), baseColor.R, baseColor.G, baseColor.B), 0),
-                new GradientStop(Color.FromArgb((byte)(255 * midAlpha * opacity), baseColor.R, baseColor.G, baseColor.B), 0.45),
-                new GradientStop(Color.FromArgb((byte)(255 * bottomAlpha * opacity), baseColor.R, baseColor.G, baseColor.B), 1)
+                new GradientStop(WithAlpha(baseColor, topAlpha * opacity), 0),
+                new GradientStop(WithAlpha(baseColor, midAlpha * opacity), 0.45),
+                new GradientStop(WithAlpha(baseColor, bottomAlpha * opacity), 1)
             }
         };
     }
 
     private static LinearGradientBrush BuildHighlightBrush(bool isLight, double opacity)
     {
-        var peakAlpha = isLight ? 0.75 : 0.28;
+        // 顶部镜面高光：峰值更亮、衰减更快，贴近玻璃表面的镜面反射。
+        var peakAlpha = isLight ? 0.82 : 0.36;
+        var peak = (byte)(Clamp01(peakAlpha * opacity) * 255);
         return new LinearGradientBrush
         {
             StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
             EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
             GradientStops =
             {
-                new GradientStop(Color.FromArgb((byte)(255 * peakAlpha * opacity), 255, 255, 255), 0),
-                new GradientStop(Color.FromArgb((byte)(255 * peakAlpha * opacity * 0.45), 255, 255, 255), 0.28),
-                new GradientStop(Colors.Transparent, 0.55)
+                new GradientStop(Color.FromArgb(peak, 255, 255, 255), 0),
+                new GradientStop(Color.FromArgb((byte)(peak * 0.38), 255, 255, 255), 0.22),
+                new GradientStop(Colors.Transparent, 0.5)
             }
         };
     }
 
     private static LinearGradientBrush BuildBorderBrush(bool isLight, double opacity)
     {
+        // 方向性受光边缘：光源从左上 45° 入射（等效 shader 的 edge highlight，
+        // 圆角矩形法线与光源方向点积），顶部与左侧边缘最亮、沿对角衰减，
+        // 右下角保留微弱环境反射，形成真正的“玻璃受光”而非均匀描边。
         var topAlpha = isLight ? 0.95 : 0.60;
-        var midAlpha = isLight ? 0.15 : 0.10;
-        var bottomAlpha = isLight ? 0.55 : 0.30;
+        var sideAlpha = isLight ? 0.28 : 0.14;
+        var bottomAlpha = isLight ? 0.12 : 0.07;
+        var reflectionAlpha = isLight ? 0.38 : 0.18;
         return new LinearGradientBrush
         {
             StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-            EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
             GradientStops =
             {
-                new GradientStop(Color.FromArgb((byte)(255 * topAlpha * opacity), 255, 255, 255), 0),
-                new GradientStop(Color.FromArgb((byte)(255 * midAlpha * opacity), 255, 255, 255), 0.5),
-                new GradientStop(Color.FromArgb((byte)(255 * bottomAlpha * opacity), 255, 255, 255), 1)
+                new GradientStop(Color.FromArgb((byte)(Clamp01(topAlpha * opacity) * 255), 255, 255, 255), 0),
+                new GradientStop(Color.FromArgb((byte)(Clamp01(sideAlpha * opacity) * 255), 255, 255, 255), 0.35),
+                new GradientStop(Color.FromArgb((byte)(Clamp01(bottomAlpha * opacity) * 255), 255, 255, 255), 0.78),
+                new GradientStop(Color.FromArgb((byte)(Clamp01(reflectionAlpha * opacity) * 255), 255, 255, 255), 1)
+            }
+        };
+    }
+
+    /// <summary>
+    /// 玻璃底部内阴影：模拟玻璃厚度，使表面产生向下“下沉”的体积感。
+    /// </summary>
+    private static LinearGradientBrush BuildInnerShadowBrush(bool isLight)
+    {
+        var bottomAlpha = isLight ? 0.18 : 0.30;
+        return new LinearGradientBrush
+        {
+            StartPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+            GradientStops =
+            {
+                new GradientStop(Color.FromArgb((byte)(bottomAlpha * 255), 0, 0, 0), 0),
+                new GradientStop(Color.FromArgb((byte)(bottomAlpha * 0.45 * 255), 0, 0, 0), 0.35),
+                new GradientStop(Colors.Transparent, 0.75)
+            }
+        };
+    }
+
+    /// <summary>
+    /// 玻璃表面底部反射：内容下方一道向上渐隐的微光，增强镜面质感。
+    /// </summary>
+    private static LinearGradientBrush BuildReflectionBrush(bool isLight)
+    {
+        var peakAlpha = isLight ? 0.10 : 0.07;
+        return new LinearGradientBrush
+        {
+            StartPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
+            GradientStops =
+            {
+                new GradientStop(Color.FromArgb((byte)(peakAlpha * 255), 255, 255, 255), 0),
+                new GradientStop(Colors.Transparent, 0.6)
             }
         };
     }
@@ -228,22 +276,34 @@ public class LiquidGlassThemeManager
             GradientStops =
             {
                 new GradientStop(Colors.Transparent, 0),
-                new GradientStop(Color.FromArgb((byte)(255 * peakAlpha), 255, 255, 255), 0.42),
+                new GradientStop(Color.FromArgb((byte)(peakAlpha * 255), 255, 255, 255), 0.42),
                 new GradientStop(Colors.Transparent, 0.85)
             }
         };
     }
 
+    private static Color WithAlpha(Color baseColor, double alpha)
+    {
+        var a = (byte)(Clamp01(alpha) * 255);
+        return Color.FromArgb(a, baseColor.R, baseColor.G, baseColor.B);
+    }
+
+    private static double Clamp01(double value)
+    {
+        return double.IsNaN(value) ? 0 : Math.Clamp(value, 0, 1);
+    }
+
     /// <summary>
     /// 通过追加样式的方式动态调整岛屿投影强度（避免与主题样式产生优先级冲突）。
     /// </summary>
-    private void ApplyShadowStyle(bool isLight, double strength)
+    private void ApplyShadowStyle(bool isLight, double strengthRaw)
     {
         if (_resourceLoaderBorder == null)
         {
             return;
         }
 
+        var strength = Clamp01(strengthRaw);
         if (strength <= 0.01)
         {
             if (_shadowStyle != null && _resourceLoaderBorder.Styles.Contains(_shadowStyle))
@@ -256,14 +316,25 @@ public class LiquidGlassThemeManager
 
         var alpha = (byte)((isLight ? 0.14 : 0.30) * strength * 255);
         var color = Color.FromArgb(alpha, 0, 0, 0);
-        var shadow = new BoxShadows(new BoxShadow
+        // 双层投影：环境光（远、柔、宽）+ 接触阴影（近、硬、窄），
+        // 模拟玻璃悬浮于背景之上的真实光照层次。
+        var ambient = new BoxShadow
         {
             OffsetX = 0,
-            OffsetY = 4,
-            Blur = 18,
-            Spread = 2,
+            OffsetY = 10,
+            Blur = 26,
+            Spread = 0,
             Color = color
-        });
+        };
+        var contact = new BoxShadow
+        {
+            OffsetX = 0,
+            OffsetY = 2,
+            Blur = 7,
+            Spread = 0,
+            Color = Color.FromArgb((byte)(alpha * 1.25), 0, 0, 0)
+        };
+        var shadow = new BoxShadows(ambient, new[] { contact });
         if (_shadowStyle == null)
         {
             _shadowStyle = new Style(selector => selector.OfType<Border>().Class("line-background"));

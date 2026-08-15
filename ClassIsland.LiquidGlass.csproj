@@ -19,10 +19,19 @@
     <PackageReference Include="ClassIsland.PluginSdk" Version="$(ClassIslandPluginSdkVersion)">
       <ExcludeAssets>runtime; native</ExcludeAssets>
     </PackageReference>
-    <!-- 应用已自带该包；此处仅用于编译期引用 AvaloniaRuntimeXamlLoader 公开 API。 -->
-    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="11.2.0">
-      <ExcludeAssets>runtime; native</ExcludeAssets>
-    </PackageReference>
+    <!-- 应用自带 Avalonia.Markup.Xaml.Loader（版本可能与应用不同，如 11.0/11.2）。
+         插件通过反射调用应用已加载的副本；本引用仅用于获取随插件携带的回退副本
+         （应用完全没有该程序集时使用），版本与 SDK 所依赖的 Avalonia 11.3.6 对齐，
+         且不得打进默认上下文（同简单名程序集会触发 FileLoadException）。 -->
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="11.3.6"
+                      ExcludeAssets="runtime; native"
+                      GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(PkgAvalonia_Markup_Xaml_Loader)/lib/net8.0/Avalonia.Markup.Xaml.Loader.dll"
+          Link="Avalonia.Markup.Xaml.Loader.dll"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

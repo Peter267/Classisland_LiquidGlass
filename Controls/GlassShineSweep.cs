@@ -1,13 +1,11 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
-using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Animation;
 using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Avalonia.Styling;
 using Avalonia.Threading;
 
 namespace ClassIsland.LiquidGlass.Controls;
@@ -33,10 +31,26 @@ public class GlassShineSweep : Panel
     /// </summary>
     public static readonly TimeSpan SweepCycleDuration = TimeSpan.FromSeconds(6.5);
 
+    /// <summary>
+    /// 扫过段占整个周期的比例，其余时间为停顿。
+    /// </summary>
+    private const double SweepSegment = 0.18;
+
+    private static readonly CubicEaseInOut SweepEasing = new();
+
     private readonly Border _sweep;
     private readonly TranslateTransform _translate;
     private CancellationTokenSource? _cts;
+    private DispatcherTimer? _sweepTimer;
     private bool _attached;
+    private double _lastSweepWidth = double.NaN;
+
+    static GlassShineSweep()
+    {
+        // 类处理器只需注册一次，避免每个实例重复订阅导致处理器堆积。
+        IsVisibleProperty.Changed.AddClassHandler<GlassShineSweep>((o, _) => o.OnIsVisibleChanged());
+        BoundsProperty.Changed.AddClassHandler<GlassShineSweep>((o, _) => o.OnBoundsChanged());
+    }
 
     public GlassShineSweep()
     {
@@ -57,7 +71,9 @@ public class GlassShineSweep : Panel
                 GradientStops =
                 {
                     new GradientStop(Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF), 0),
-                    new GradientStop(Color.FromArgb(0x2E, 0xFF, 0xFF, 0xFF), 0.5),
+                    new GradientStop(Color.FromArgb(0x2A, 0xFF, 0xFF, 0xFF), 0.35),
+                    new GradientStop(Color.FromArgb(0x42, 0xFF, 0xFF, 0xFF), 0.5),
+                    new GradientStop(Color.FromArgb(0x2A, 0xFF, 0xFF, 0xFF), 0.65),
                     new GradientStop(Color.FromArgb(0x00, 0xFF, 0xFF, 0xFF), 1),
                 }
             },
@@ -72,9 +88,6 @@ public class GlassShineSweep : Panel
             },
         };
         Children.Add(_sweep);
-
-        IsVisibleProperty.Changed.AddClassHandler<GlassShineSweep>((o, _) => o.OnIsVisibleChanged());
-        BoundsProperty.Changed.AddClassHandler<GlassShineSweep>((o, _) => o.OnBoundsChanged());
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -116,7 +129,13 @@ public class GlassShineSweep : Panel
 
         if (IsEffectivelyVisible && Bounds.Width > 0)
         {
-            StartSweep();
+            // 尺寸持续变化时（如窗口缩放、宽度过渡动画）不重启扫光，
+            // 仅在宽度发生有效变化或尚未启动时才重新开始。
+            if (_cts == null || Math.Abs(Bounds.Width - _lastSweepWidth) > 0.5)
+            {
+                _lastSweepWidth = Bounds.Width;
+                StartSweep();
+            }
         }
         else
         {
@@ -129,43 +148,44 @@ public class GlassShineSweep : Panel
         StopSweep();
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
-        var translate = _translate;
         var width = Bounds.Width;
         var start = -SweepWidth * 1.4;
         var end = width + SweepWidth * 1.4;
+        var durationMs = SweepCycleDuration.TotalMilliseconds;
+        var stopwatch = Stopwatch.StartNew();
 
-        var animation = new Animation
+        // Avalonia 的动画系统无法通过公开 API 启动无限循环动画
+        // （RunAsync 对 IterationCount.Infinite 抛异常，IAnimation.Apply 为
+        // internal，且 TransformAnimator 要求动画目标为 Visual 而非 Transform），
+        // 因此改用 DispatcherTimer 手动驱动 TranslateTransform.X，效果一致且
+        // 不依赖任何 internal API，跨版本稳定。
+        var timer = new DispatcherTimer
         {
-            Duration = SweepCycleDuration,
-            IterationCount = IterationCount.Infinite,
-            Easing = new CubicEaseInOut(),
+            Interval = TimeSpan.FromMilliseconds(16),
         };
-        animation.Children.Add(new KeyFrame
-        {
-            KeyTime = TimeSpan.Zero,
-            Setters = { new Setter(TranslateTransform.XProperty, start) },
-        });
-        animation.Children.Add(new KeyFrame
-        {
-            KeyTime = TimeSpan.FromSeconds(SweepCycleDuration.TotalSeconds * 0.18),
-            Setters = { new Setter(TranslateTransform.XProperty, end) },
-        });
-        animation.Children.Add(new KeyFrame
-        {
-            KeyTime = SweepCycleDuration,
-            Setters = { new Setter(TranslateTransform.XProperty, end) },
-        });
-
-        Dispatcher.UIThread.Post(() =>
+        timer.Tick += (_, _) =>
         {
             if (token.IsCancellationRequested)
             {
+                timer.Stop();
                 return;
             }
 
-            _ = animation.RunAsync(translate, token)
-                .ContinueWith(_ => { }, token, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        }, DispatcherPriority.Loaded);
+            try
+            {
+                var t = (stopwatch.Elapsed.TotalMilliseconds % durationMs) / durationMs;
+                _translate.X = t < SweepSegment
+                    ? start + (end - start) * SweepEasing.Ease(t / SweepSegment)
+                    : end;
+            }
+            catch (Exception)
+            {
+                // 定时器异常只影响扫光效果，绝不能崩溃应用。
+                timer.Stop();
+            }
+        };
+        timer.Start();
+        _sweepTimer = timer;
     }
 
     private void StopSweep()
@@ -173,5 +193,10 @@ public class GlassShineSweep : Panel
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = null;
+        if (_sweepTimer != null)
+        {
+            _sweepTimer.Stop();
+            _sweepTimer = null;
+        }
     }
 }

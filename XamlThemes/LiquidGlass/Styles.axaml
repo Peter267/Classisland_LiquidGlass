@@ -32,11 +32,27 @@
             </LinearGradientBrush.GradientStops>
         </LinearGradientBrush>
 
-        <LinearGradientBrush x:Key="LG.BorderBrush" StartPoint="0%,0%" EndPoint="0%,100%">
+        <LinearGradientBrush x:Key="LG.BorderBrush" StartPoint="0%,0%" EndPoint="100%,100%">
             <LinearGradientBrush.GradientStops>
                 <GradientStop Color="#99FFFFFF" Offset="0"/>
-                <GradientStop Color="#19FFFFFF" Offset="0.5"/>
-                <GradientStop Color="#4DFFFFFF" Offset="1"/>
+                <GradientStop Color="#24FFFFFF" Offset="0.35"/>
+                <GradientStop Color="#12FFFFFF" Offset="0.78"/>
+                <GradientStop Color="#30FFFFFF" Offset="1"/>
+            </LinearGradientBrush.GradientStops>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="LG.InnerShadowBrush" StartPoint="0%,100%" EndPoint="0%,0%">
+            <LinearGradientBrush.GradientStops>
+                <GradientStop Color="#4D000000" Offset="0"/>
+                <GradientStop Color="#22000000" Offset="0.35"/>
+                <GradientStop Color="#00000000" Offset="0.75"/>
+            </LinearGradientBrush.GradientStops>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="LG.ReflectionBrush" StartPoint="0%,100%" EndPoint="0%,0%">
+            <LinearGradientBrush.GradientStops>
+                <GradientStop Color="#12FFFFFF" Offset="0"/>
+                <GradientStop Color="#00FFFFFF" Offset="0.6"/>
             </LinearGradientBrush.GradientStops>
         </LinearGradientBrush>
 
@@ -176,6 +192,15 @@
                             ClipToBounds="True"
                             Opacity="1"/>
 
+                    <Border x:Name="GlassInnerShadowOverlay"
+                            IsVisible="{Binding !$self.(ci:MainWindowStylesAssist.IsIslandSeperated)}"
+                            IsHitTestVisible="False"
+                            Background="{DynamicResource LG.InnerShadowBrush}"
+                            CornerRadius="{Binding $self.(ci:MainWindowStylesAssist.CornerRadius), Converter={StaticResource SizeDoubleToCornerRadiusConverter}, ConverterParameter=1.0}"
+                            Height="{DynamicResource IslandContainerHeight}"
+                            Width="{Binding BackgroundWidth, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType=controls:MainWindowLine}}"
+                            ClipToBounds="True"/>
+
                     <Border x:Name="GlassShineSweepHost"
                             Classes="docking"
                             IsVisible="{Binding !$self.(ci:MainWindowStylesAssist.IsIslandSeperated)}"
@@ -304,6 +329,15 @@
                             </Grid>
                         </Panel>
                     </Grid>
+
+                    <Border x:Name="GlassReflectionOverlay"
+                            IsVisible="{Binding !$self.(ci:MainWindowStylesAssist.IsIslandSeperated)}"
+                            IsHitTestVisible="False"
+                            Background="{DynamicResource LG.ReflectionBrush}"
+                            CornerRadius="{Binding $self.(ci:MainWindowStylesAssist.CornerRadius), Converter={StaticResource SizeDoubleToCornerRadiusConverter}, ConverterParameter=1.0}"
+                            Height="{DynamicResource IslandContainerHeight}"
+                            Width="{Binding BackgroundWidth, Mode=OneWay, RelativeSource={RelativeSource FindAncestor, AncestorType=controls:MainWindowLine}}"
+                            ClipToBounds="True"/>
                 </Grid>
             </ControlTemplate>
 
@@ -351,6 +385,10 @@
                         <Border Classes="line-background"/>
                         <Border IsHitTestVisible="False"
                                 ClipToBounds="True"
+                                Background="{DynamicResource LG.InnerShadowBrush}"
+                                CornerRadius="{Binding $self.(ci:MainWindowStylesAssist.CornerRadius), Converter={StaticResource SizeDoubleToCornerRadiusConverter}, ConverterParameter=1.0}"/>
+                        <Border IsHitTestVisible="False"
+                                ClipToBounds="True"
                                 Background="{DynamicResource LG.HighlightBrush}"
                                 CornerRadius="{Binding $self.(ci:MainWindowStylesAssist.CornerRadius), Converter={StaticResource SizeDoubleToCornerRadiusConverter}, ConverterParameter=1.0}"/>
                         <Border IsHitTestVisible="False"
@@ -376,6 +414,10 @@
                             <ContentPresenter Content="{Binding}"
                                               Margin="16 0" />
                         </Border>
+                        <Border IsHitTestVisible="False"
+                                ClipToBounds="True"
+                                Background="{DynamicResource LG.ReflectionBrush}"
+                                CornerRadius="{Binding $self.(ci:MainWindowStylesAssist.CornerRadius), Converter={StaticResource SizeDoubleToCornerRadiusConverter}, ConverterParameter=1.0}"/>
                     </Grid>
                 </DataTemplate>
             </Setter>
